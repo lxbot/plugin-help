@@ -11,8 +11,8 @@ ENV GO111MODULE=on
 RUN go mod download
 ADD . /go/src/$GOLANG_NAMESPACE/
 RUN make build
-RUN mkdir -p /lxbot/scripts
-RUN mv /go/src/$GOLANG_NAMESPACE/plugin-help.so /lxbot/scripts/
+RUN mkdir -p /lxbot/plugins
+RUN mv /go/src/$GOLANG_NAMESPACE/plugin-help.so /lxbot/plugins/
 
 # ====================================================================================
 
@@ -23,4 +23,4 @@ COPY --from=builder /etc/localtime /etc/localtime
 COPY --from=builder /lxbot /lxbot
 
 WORKDIR /lxbot
-VOLUME /lxbot/scripts
+VOLUME /lxbot/plugins
