@@ -1,8 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"encoding/gob"
+	"github.com/lxbot/lxlib"
+	"log"
 	"os"
 	"plugin"
 	"strings"
@@ -30,9 +31,13 @@ func BeforeScripts() []func(M) M {
 
 	return []func(M) M{
 		func(msg M) M {
-			text := msg["message"].(M)["text"].(string)
+			m, err := lxlib.NewLXMessage(msg)
+			if err != nil {
+				log.Println(err)
+				return nil
+			}
+			text := m.Message.Text
 			if text == p+"help" {
-				m, _ := deepCopy(msg)
 				go showHelp(m)
 			}
 			return msg
@@ -40,21 +45,7 @@ func BeforeScripts() []func(M) M {
 	}
 }
 
-func deepCopy(msg M) (M, error) {
-	var b bytes.Buffer
-	e := gob.NewEncoder(&b)
-	d := gob.NewDecoder(&b)
-	if err := e.Encode(msg); err != nil {
-		return nil, err
-	}
-	r := map[string]interface{}{}
-	if err := d.Decode(&r); err != nil {
-		return nil, err
-	}
-	return r, nil
-}
-
-func showHelp(msg M) {
+func showHelp(m *lxlib.LXMessage) {
 	helpTexts := make([]string, 0)
 	helpTexts = append(helpTexts, "\n")
 	for _, s := range scripts {
@@ -67,7 +58,11 @@ func showHelp(msg M) {
 		}
 	}
 	helpText := strings.Join(helpTexts, "\n")
-	msg["mode"] = "reply"
-	msg["message"].(M)["text"] = helpText
+	msg, err := m.SetText(helpText).Reply().ToMap()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
 	*ch <- msg
 }
